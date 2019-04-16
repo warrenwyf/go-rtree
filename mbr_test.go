@@ -1,15 +1,31 @@
 package rtree
 
 import (
-	"reflect"
 	"testing"
 )
 
 func Test_MbrInt32(t *testing.T) {
-	var mbr Mbr = NewMbrInt32([]int32{0, 0}, []int32{0, 0})
+	var mbr Mbr = NewMbrInt32([]int32{1, 2}, []int32{0, 0})
 
 	if mbr == nil {
 		t.Errorf("NewMbrInt32() failed")
+	}
+
+	if mbr.Type() != MbrTypeInt32 {
+		t.Errorf("Wrong type")
+	}
+
+	if mbr.Dim() != 2 {
+		t.Errorf("Wrong dimension")
+	}
+}
+
+func Test_MbrInt32_Equals(t *testing.T) {
+	mbr1 := NewMbrInt32([]int32{0, 0, 0, 0}, []int32{4, 4, 4, 4})
+	mbr2 := NewMbrInt32([]int32{0, 0, 0, 0}, []int32{4, 4, 4, 4})
+
+	if !mbr1.Equals(mbr2) {
+		t.Errorf("MbrInt32.Equals() got wrong result")
 	}
 }
 
@@ -41,6 +57,16 @@ func Test_MbrInt32_Intersects(t *testing.T) {
 	}
 }
 
+func Test_MbrInt32_Clone(t *testing.T) {
+	mbr1 := NewMbrInt32([]int32{0, 0}, []int32{4, 4})
+	mbr2 := mbr1.Clone()
+	(*mbr1)[0] += 1
+
+	if mbr1.Equals(mbr2) {
+		t.Errorf("MbrInt32.Clone() got wrong result")
+	}
+}
+
 func Test_MergeMbrs(t *testing.T) {
 	mbr1 := NewMbrInt32([]int32{0, 0, 0}, []int32{2, 2, 2})
 	mbr2 := NewMbrInt32([]int32{1, 1, 1}, []int32{2, 2, 2})
@@ -52,7 +78,7 @@ func Test_MergeMbrs(t *testing.T) {
 	}
 }
 
-func Test_MergeMbrs_Different(t *testing.T) {
+func Test_MergeMbrsTypeDismatch(t *testing.T) {
 	mbr1 := NewMbrInt32([]int32{0, 0, 0}, []int32{2, 2, 2})
 	mbr2 := NewMbrFloat64([]float64{1.0, 2.0}, []float64{2, 2})
 
@@ -60,15 +86,4 @@ func Test_MergeMbrs_Different(t *testing.T) {
 	if !mbr.Equals(mbr1) {
 		t.Errorf("MergeMbrs() got wrong result")
 	}
-}
-
-func Test_MbrInt32_MemorySize(t *testing.T) {
-	type s struct {
-		a int
-		b int
-	}
-
-	a := s{}
-
-	t.Logf("MbrInt32 use momery: %d bytes", reflect.TypeOf(a).Size())
 }

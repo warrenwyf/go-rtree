@@ -5,6 +5,11 @@ import (
 	"sort"
 )
 
+type Feature interface {
+	Mbr() Mbr
+	Equals(f Feature) bool
+}
+
 type Rtree struct {
 	dim     int
 	fan     int
@@ -340,8 +345,8 @@ func (n *node) getObject() *object {
 
 func (n *node) computeMbr() Mbr {
 	mbrs := make([]Mbr, len(n.objs))
-	for i, e := range n.objs {
-		mbrs[i] = e.mbr
+	for i, obj := range n.objs {
+		mbrs[i] = obj.mbr
 	}
 
 	return MergeMbrs(mbrs...)
@@ -392,9 +397,9 @@ func (n *node) split(minGroupSize int) (left, right *node) {
 func (n *node) pickSeeds() (int, int) {
 	left, right := 0, 1
 	maxWastedSpace := -1.0
-	for i, e1 := range n.objs {
-		for j, e2 := range n.objs[i+1:] {
-			d := MergeMbrs(e1.mbr, e2.mbr).size() - e1.mbr.size() - e2.mbr.size()
+	for i, obj1 := range n.objs {
+		for j, obj2 := range n.objs[i+1:] {
+			d := MergeMbrs(obj1.mbr, obj2.mbr).size() - obj1.mbr.size() - obj2.mbr.size()
 			if d > maxWastedSpace {
 				maxWastedSpace = d
 				left, right = i, j+i+1
@@ -404,7 +409,7 @@ func (n *node) pickSeeds() (int, int) {
 	return left, right
 }
 
-func pickNext(left, right *node, objs []*object) (next int) {
+func pickNext(left *node, right *node, objs []*object) (next int) {
 	maxDiff := -1.0
 	leftMbr := left.computeMbr()
 	rightMbr := right.computeMbr()
@@ -448,7 +453,7 @@ func (s *dimSorter) Less(i, j int) bool {
 		a, aok := m1.(*MbrInt32)
 		b, bok := m2.(*MbrInt32)
 		if aok && bok {
-			return a.mins[s.dim] < b.mins[s.dim]
+			return (*a)[s.dim*2] < (*b)[s.dim*2]
 		}
 	case MbrTypeFloat64:
 		a, aok := m1.(*MbrFloat64)
